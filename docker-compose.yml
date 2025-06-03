@@ -1,0 +1,110 @@
+services:
+
+  # -------------------------------------------------------
+  # 1) 공통용 MySQL: Mac 아닌 환경(리눅스/윈도우/ARM 아닌 CPU)에서 쓰는 설정
+  # -------------------------------------------------------
+  mysql:
+    image: mysql:5.7
+    container_name: store_mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ddd_start
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_general_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - store_network
+
+  # -------------------------------------------------------
+  # 2) Mac 전용 MySQL: M1/M2 칩에서 돌릴 때 에뮬레이션으로 linux/amd64 사용
+  # -------------------------------------------------------
+  mysql_mac:
+    image: mysql:5.7
+    container_name: store_mysql_mac
+    platform: linux/amd64
+    volumes:
+      - ./mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ddd_start
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_general_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - store_network
+    profiles:
+      - "mac"
+
+  # 백엔드 서비스 (Spring Boot)
+  backend:
+    build:
+      context: ./store_backend
+      dockerfile: docker/Dockerfile_backend
+    container_name: store_backend
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://store_mysql:3306/ddd_start?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&characterEncoding=utf8&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES: ${JWT_EXPIRES}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - store_network
+
+  # Jenkins (CI/CD) Server
+  jenkins:
+    build:
+      context: ./store_backend
+      dockerfile: docker/Dockerfile_jenkins
+    container_name: store_jenkins
+    user: root
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9000:8080" # Jenkins 포트
+      - "50000:50000" # Jenkins Agent 포트
+    networks:
+      - store_network
+    restart: unless-stopped
+
+  # 프론트엔드 서비스
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: store_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - store_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  store_network:
+    driver: bridge 
