@@ -58,7 +58,8 @@ export default function SearchBar({ onClose }) {
       setLoading(true);
       try {
         const results = await ApiService.searchProducts(term);
-        setSearchResults(results);
+        // 응답이 배열 또는 객체(content) 모두 대응
+        setSearchResults(Array.isArray(results) ? results : (results.content || []));
       } catch (error) {
         console.error('검색 에러:', error);
         setSearchResults([]);
@@ -184,7 +185,7 @@ export default function SearchBar({ onClose }) {
               >
                 <ListItemAvatar>
                   <Avatar
-                    src={product.image}
+                    src={product.images && product.images[0] ? product.images[0] : product.image}
                     alt={product.title}
                     variant="rounded"
                   />
@@ -197,7 +198,7 @@ export default function SearchBar({ onClose }) {
                       variant="body2"
                       color="primary"
                     >
-                      {product.price.toLocaleString()}원
+                      {(product.price?.amount || product.price || 0).toLocaleString()}원
                     </Typography>
                   }
                 />

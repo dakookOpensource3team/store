@@ -40,7 +40,7 @@ function AppContent() {
   const [hasApiErrors, setHasApiErrors] = useState(false);
 
   // 검색창을 표시할 페이지 경로들
-  const searchAllowedPaths = ['/products', '/products/'];
+  const searchAllowedPaths = ['/', '/products', '/products/'];
   const isSearchAllowed = searchAllowedPaths.some(path => 
     location.pathname.startsWith(path)
   );
@@ -273,8 +273,8 @@ function AppContent() {
     <ThemeProvider theme={theme}>
       <div style={{ paddingTop: '64px' }}>
         <Header toggleSearch={toggleSearch} />
-        {isSearchAllowed && (
-          <SearchBar isVisible={searchVisible} onToggleVisibility={setSearchVisible} />
+        {isSearchAllowed && searchVisible && (
+          <SearchBar onClose={() => setSearchVisible(false)} />
         )}
         <main style={{ 
           marginTop: (searchVisible && isSearchAllowed) ? '64px' : '0', 
