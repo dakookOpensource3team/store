@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+            IMAGE_NAME = "store_backend"
+            IMAGE_TAG = "latest"
+    }
+    
+    stages {
+        
+        stage('github-clone') {
+            steps {
+                git branch: 'develop',
+                    credentialsId: 'github_token',
+                    url: 'https://github.com/dakookOpensource3team/store_backend'
+            }
+        }
+
+        //빌드 시작
+        stage('build') {
+            steps {
+                sh './gradlew build -x test'
+            }
+        }
+
+        //빌드 결과 아카이브에 저장
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
+            }
+        }
+
+        //도커 이미지 빌드
+        stage('Docker Build') {
+           steps {
+               sh "docker build -f ./docker/Dockerfile_backend -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+           }
+        }
+
+        //도커 이미지 빌드 결과 아카이브에 저장
+                stage('Archive Docker Image') {
+                    steps {
+                        sh 'docker save -o store_backend.tar store_backend:latest'
+                        archiveArtifacts artifacts: 'store_backend.tar', fingerprint: true
+                    }
+                }
+   		// stage...
+        
+   	}
+}

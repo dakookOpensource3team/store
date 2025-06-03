@@ -1,0 +1,24 @@
+server:
+  tomcat:
+    threads:
+      max: 100
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  jpa:
+    database: mysql
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:mysql://localhost:3306/ddd_start?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&characterEncoding=utf8
+    username: root
+    password: ${MYSQL_ROOT_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size:  101
+password:
+  secretKey: TaeWooTaeWooSecretKey
+jwt:
+  secret: ${JWT_SECRET}
+  expires: ${JWT_EXPIRES} # 1 day
