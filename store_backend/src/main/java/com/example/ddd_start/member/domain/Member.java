@@ -30,7 +30,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 @AllArgsConstructor
 @Getter
 @EqualsAndHashCode(of = "id")
-@Builder
 public class Member implements UserDetails {
 
   @Id
